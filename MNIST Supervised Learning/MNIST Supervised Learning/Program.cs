@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,18 +22,32 @@ namespace NeuralNet
             //set up the network
             Network.learningRate = 0.1;
             Network.momentumScalar = 0.001;
-            Network.batchSize = 4;
-            Network nn = new Network(new int[] { 2, 2, 1 });
+            Network.batchSize = 60000;
+            Network nn = new Network(new int[] { 784, 100, 100, 10 });
 
             //set up training samples
+            //assuming a (row x column) image
             List<TrainingSample> trainingSamples = new List<TrainingSample>();
-            trainingSamples.Add(new TrainingSample(new double[] {0, 0}, new double[] { 0 }));
-            trainingSamples.Add(new TrainingSample(new double[] {0, 1}, new double[] { 1 }));
-            trainingSamples.Add(new TrainingSample(new double[] {1, 0}, new double[] { 1 }));
-            trainingSamples.Add(new TrainingSample(new double[] {1, 1}, new double[] { 0 }));
+            StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
+            String line = sr.ReadLine(); //skips first line
+            while ((line = sr.ReadLine()) != null)
+            {
+                String[] dividedString = line.Split(',');
+
+                //standardize inputs
+                double[] standardizedPixelValues = new double[784];
+                for (int i = 1; i < dividedString.Length; i++)
+                    standardizedPixelValues[i] = double.Parse(dividedString[i]) / 256.0;
+
+                //classify output
+                double[] target = new double[10];
+                target[int.Parse(dividedString[0])] = 1;
+
+                trainingSamples.Add(new TrainingSample(standardizedPixelValues, new double[] {  }));
+            }
 
             //train network
-            for (int epoch = 0; epoch < 100000; epoch++)
+            for (int epoch = 0; epoch < 1000; epoch++)
             {
                 double mse = 0;
                 trainingSamples.ForEach(sample => mse += nn.backPropagate(sample.inputs, sample.targets));
