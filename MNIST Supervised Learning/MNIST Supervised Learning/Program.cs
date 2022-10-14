@@ -23,7 +23,7 @@ namespace NeuralNet
             Network.learningRate = 0.1;
             Network.momentumScalar = 0.001;
             Network.batchSize = 60000;
-            Network nn = new Network(new int[] { 784, 100, 100, 10 });
+            Network nn = new Network(new int[] { 784, 32, 10 });
 
             //set up training samples
             //assuming a (row x column) image
@@ -36,18 +36,18 @@ namespace NeuralNet
 
                 //standardize inputs
                 double[] standardizedPixelValues = new double[784];
-                for (int i = 1; i < dividedString.Length; i++)
-                    standardizedPixelValues[i] = double.Parse(dividedString[i]) / 256.0;
+                for (int i = 0; i < standardizedPixelValues.Length; i++)
+                    standardizedPixelValues[i] = double.Parse(dividedString[i+1]) / 256.0;
 
                 //classify output
-                double[] target = new double[10];
-                target[int.Parse(dividedString[0])] = 1;
+                double[] targets = new double[10];
+                targets[int.Parse(dividedString[0])] = 1;
 
-                trainingSamples.Add(new TrainingSample(standardizedPixelValues, new double[] {  }));
+                trainingSamples.Add(new TrainingSample(standardizedPixelValues, targets));
             }
 
             //train network
-            for (int epoch = 0; epoch < 1000; epoch++)
+            for (int epoch = 0; epoch < 5; epoch++)
             {
                 double mse = 0;
                 trainingSamples.ForEach(sample => mse += nn.backPropagate(sample.inputs, sample.targets));
@@ -68,8 +68,8 @@ namespace NeuralNet
 
                 //standardize inputs
                 double[] standardizedPixelValues = new double[784];
-                for (int i = 1; i < dividedString.Length; i++)
-                    standardizedPixelValues[i] = double.Parse(dividedString[i]) / 256.0;
+                for (int i = 0; i < standardizedPixelValues.Length; i++)
+                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 256.0;
 
                 //print output
                 double[] output = nn.forwardPropagate(standardizedPixelValues);

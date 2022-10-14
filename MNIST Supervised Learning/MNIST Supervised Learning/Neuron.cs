@@ -42,12 +42,14 @@ namespace NeuralNet
 
         public double activationFunction(double x)
         {
-            return Math.Tanh(x);
+            //return Math.Tanh(x);
+            return 1.0 / (1.0 + Math.Exp(-x));
         }
 
         public double derivativeActivation(double x)
         {
-            return 1 - Math.Pow(Math.Tanh(x), 2);
+            //return 1 - Math.Pow(Math.Tanh(x), 2);
+            return activationFunction(x) * (1 - activationFunction(x));
         }
         public void firstLayerSetup(double actV)
         {

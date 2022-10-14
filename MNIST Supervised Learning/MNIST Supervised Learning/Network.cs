@@ -30,7 +30,7 @@ namespace NeuralNet
             }
         }
 
-        public double[] forwardPropagate(double[] inputs)
+        public double[] forwardPropagateBeforeSoftmax(double[] inputs)
         {
             //First Layer Setup
             for (int i = 0; i < inputs.Length; i++)
@@ -43,10 +43,18 @@ namespace NeuralNet
             //Convert from Neuron to Double
             return convertLayerToDoubles(layers[layers.Count - 1]);
         }
+        public double[] forwardPropagate(double[] inputs)
+        {
+            double[] outputsBeforeSoftmax = forwardPropagateBeforeSoftmax(inputs);
+
+            //Apply Softmax
+            return applySoftmax(outputsBeforeSoftmax);
+        }
 
         public double backPropagate(double[] inputs, double[] targets)
         {
-            double[] outputs = forwardPropagate(inputs);
+            double[] outputsBeforeSoftmax = forwardPropagateBeforeSoftmax(inputs);
+            double[] outputs = applySoftmax(outputsBeforeSoftmax); ; //after Softmax
             double[] cost = new double[targets.Length];
             double[] costGradient = new double[targets.Length]; //technically the activation gradient for the outer layer
 
@@ -66,7 +74,7 @@ namespace NeuralNet
                 {
                     Neuron neuron = layer[neuronIdx];
                     if (layerIdx == layers.Count - 1)
-                        neuron.neuronGradient = costGradient[neuronIdx] * neuron.derivativeActivation(neuron.neuronValue); //reset neuron gradient for each sample
+                        neuron.neuronGradient = costGradient[neuronIdx] * softmaxDerivative(outputsBeforeSoftmax)[neuronIdx] * neuron.derivativeActivation(neuron.neuronValue); //reset neuron gradient for each sample
                     else
                     {
                         //calculate activation gradient
@@ -98,6 +106,28 @@ namespace NeuralNet
                 neuronIdx++;
             });
 
+            return newArray;
+        }
+
+        public double[] applySoftmax(double[] array)
+        {
+            double expSum = 0;
+            for (int i = 0; i < array.Length; i++)
+                expSum += Math.Exp(array[i]);
+
+            double[] newArray = new double[array.Length];
+            for (int i = 0; i < newArray.Length; i++)
+                newArray[i] = Math.Exp(array[i]) / expSum;
+
+            return newArray;
+        }
+
+        public double[] softmaxDerivative(double[] array)
+        {
+            double[] softmaxArray = applySoftmax(array);
+            double[] newArray = new double[array.Length];
+            for (int i = 0; i < newArray.Length; i++)
+                newArray[i] = softmaxArray[i] * (1 - softmaxArray[i]);
             return newArray;
         }
 
