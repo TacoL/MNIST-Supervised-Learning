@@ -22,7 +22,7 @@ namespace NeuralNet
             //set up the network
             Network.learningRate = 0.1;
             Network.momentumScalar = 0.001;
-            Network.batchSize = 60000;
+            Network.batchSize = 128;
             Network nn = new Network(new int[] { 784, 32, 10 });
 
             //set up training samples
@@ -47,13 +47,22 @@ namespace NeuralNet
             }
 
             //train network
-            for (int epoch = 0; epoch < 5; epoch++)
+            for (int epoch = 0; epoch < 1000; epoch++)
             {
                 double mse = 0;
-                trainingSamples.ForEach(sample => mse += nn.backPropagate(sample.inputs, sample.targets));
-                nn.updateWeightsAndBiases();
+                int numBatches = trainingSamples.Count / Network.batchSize;
 
-                Console.WriteLine("Epoch: {0}         MSE: {1}", epoch + 1, mse / Network.batchSize);
+                //batching
+                for (int batchIdx = 0; batchIdx < numBatches; batchIdx++)
+                {
+                    double batchMse = 0;
+                    for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
+                        batchMse += nn.backPropagate(trainingSamples[sampleIdx].inputs, trainingSamples[sampleIdx].targets);
+                    nn.updateWeightsAndBiases();
+                    mse += batchMse / Network.batchSize;
+                }
+
+                Console.WriteLine("Epoch: {0}         MSE: {1}", epoch + 1, mse / numBatches);
             }
 
             //results
@@ -78,7 +87,7 @@ namespace NeuralNet
                 total++;
             }
 
-            Console.WriteLine("Success Rate: " + ((double)successes / (double)total) + "%");
+            Console.WriteLine("Success Rate: " + ((double)successes / (double)total * 100) + "%");
         }
     }
 }
