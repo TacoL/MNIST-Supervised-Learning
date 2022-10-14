@@ -57,10 +57,28 @@ namespace NeuralNet
             }
 
             //results
-            Console.WriteLine(nn.forwardPropagate(new double[] {0, 0})[0]);
-            Console.WriteLine(nn.forwardPropagate(new double[] {0, 1})[0]);
-            Console.WriteLine(nn.forwardPropagate(new double[] {1, 0})[0]);
-            Console.WriteLine(nn.forwardPropagate(new double[] {1, 1})[0]);
+            StreamReader srTest = new StreamReader(File.OpenRead("mnist_test.csv"));
+            line = srTest.ReadLine(); //skips first line
+
+            int successes = 0;
+            int total = 0;
+            while ((line = srTest.ReadLine()) != null)
+            {
+                String[] dividedString = line.Split(',');
+
+                //standardize inputs
+                double[] standardizedPixelValues = new double[784];
+                for (int i = 1; i < dividedString.Length; i++)
+                    standardizedPixelValues[i] = double.Parse(dividedString[i]) / 256.0;
+
+                //print output
+                double[] output = nn.forwardPropagate(standardizedPixelValues);
+                if (Array.IndexOf(output, output.Max()) == int.Parse(dividedString[0]))
+                    successes++;
+                total++;
+            }
+
+            Console.WriteLine("Success Rate: " + ((double)successes / (double)total) + "%");
         }
     }
 }
