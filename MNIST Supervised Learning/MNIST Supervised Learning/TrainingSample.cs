@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeuralNet
+namespace MNIST_Supervised_Learning
 {
     public struct TrainingSample
     {

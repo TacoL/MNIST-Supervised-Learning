@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeuralNet
+namespace MNIST_Supervised_Learning
 {
     public class Network
     {
@@ -13,7 +13,7 @@ namespace NeuralNet
         public static double momentumScalar;
         public static int batchSize;
 
-        List<List<Neuron>> layers = new List<List<Neuron>>();
+        public List<List<Neuron>> layers = new List<List<Neuron>>();
         public Network(int[] structure)
         {
             for (int layerIdx = 0; layerIdx < structure.Length; layerIdx++)
@@ -22,9 +22,24 @@ namespace NeuralNet
                 for (int neuronIdx = 0; neuronIdx < structure[layerIdx]; neuronIdx++)
                 {
                     if (layerIdx == 0)
-                        layer.Add(new Neuron(0));
+                        layer.Add(new Neuron(0, false));
+                    else if(layerIdx == structure.Length - 1)
+                        layer.Add(new Neuron(structure[layerIdx - 1], true));
                     else
-                        layer.Add(new Neuron(structure[layerIdx - 1]));
+                        layer.Add(new Neuron(structure[layerIdx - 1], false));
+                }
+                layers.Add(layer);
+            }
+        }
+
+        public Network(Network original)
+        {
+            for (int layerIdx = 0; layerIdx < original.layers.Count; layerIdx++)
+            {
+                List<Neuron> layer = new List<Neuron>();
+                for (int neuronIdx = 0; neuronIdx < original.layers[layerIdx].Count; neuronIdx++)
+                {
+                    layer.Add(new Neuron(original.layers[layerIdx][neuronIdx]));
                 }
                 layers.Add(layer);
             }
@@ -35,6 +50,7 @@ namespace NeuralNet
             //First Layer Setup
             for (int i = 0; i < inputs.Length; i++)
                 layers[0][i].firstLayerSetup(inputs[i]);
+            //layers[0].Select((n, i) => (n, i)).ToList().ForEach(t => t.n.firstLayerSetup(inputs[t.i]));
 
             //Propagate Forward
             for (int layerIdx = 1; layerIdx < layers.Count; layerIdx++)
@@ -54,7 +70,7 @@ namespace NeuralNet
         public double backPropagate(double[] inputs, double[] targets)
         {
             double[] outputsBeforeSoftmax = forwardPropagateBeforeSoftmax(inputs);
-            double[] outputs = applySoftmax(outputsBeforeSoftmax); ; //after Softmax
+            double[] outputs = applySoftmax(outputsBeforeSoftmax); //after Softmax
             double[] cost = new double[targets.Length];
             double[] costGradient = new double[targets.Length]; //technically the activation gradient for the outer layer
 
@@ -74,7 +90,7 @@ namespace NeuralNet
                 {
                     Neuron neuron = layer[neuronIdx];
                     if (layerIdx == layers.Count - 1)
-                        neuron.neuronGradient = costGradient[neuronIdx] * softmaxDerivative(outputsBeforeSoftmax)[neuronIdx] * neuron.derivativeActivation(neuron.neuronValue); //reset neuron gradient for each sample
+                        neuron.neuronGradient = costGradient[neuronIdx] * softmaxDerivative(outputsBeforeSoftmax)[neuronIdx]; //reset neuron gradient for each sample
                     else
                     {
                         //calculate activation gradient

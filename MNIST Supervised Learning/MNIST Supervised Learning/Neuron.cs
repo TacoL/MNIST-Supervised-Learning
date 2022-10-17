@@ -4,15 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeuralNet
+namespace MNIST_Supervised_Learning
 {
     public class Neuron
     {
         public double neuronValue, activationValue, bias, neuronGradient, biasGradient, previousBG;
         public double[] weights, weightGradients, previousWG;
 
-        public Neuron(int numInputs)
+        private Boolean output;
+
+        public Neuron(int numInputs, Boolean output)
         {
+            this.output = output; 
+
             neuronValue = 0;
             activationValue = 0;
             neuronGradient = 0;
@@ -28,6 +32,26 @@ namespace NeuralNet
             previousBG = 0;
         }
 
+        public Neuron(Neuron original)
+        {
+            output = original.output;
+
+            neuronValue = original.neuronValue;
+            activationValue = original.activationValue;
+            neuronGradient = original.neuronGradient;
+
+            weights = new double[original.weights.Length];
+            weightGradients = new double[original.weightGradients.Length];
+            previousWG = new double[original.previousWG.Length];
+
+            for (int weightIdx = 0; weightIdx < weights.Length; weightIdx++)
+                weights[weightIdx] = original.weights[weightIdx];
+
+            bias = original.bias;
+            biasGradient = original.biasGradient;
+            previousBG = original.previousBG;
+        }
+
         public void calcActivationValue(List<Neuron> inputNeurons)
         {
             neuronValue = 0; //reset neuron value every time
@@ -37,19 +61,29 @@ namespace NeuralNet
             neuronValue += bias;
 
 
-            activationValue = activationFunction(neuronValue);
+            activationValue = output ? outputActivation(neuronValue) : activationFunction(neuronValue);
         }
 
         public double activationFunction(double x)
         {
-            //return Math.Tanh(x);
-            return 1.0 / (1.0 + Math.Exp(-x));
+            return Math.Tanh(x);
         }
 
         public double derivativeActivation(double x)
         {
-            //return 1 - Math.Pow(Math.Tanh(x), 2);
-            return activationFunction(x) * (1 - activationFunction(x));
+            return 1 - Math.Pow(Math.Tanh(x), 2);
+        }
+
+        public double outputActivation(double x)
+        {
+            //softmax
+            return x;
+        }
+
+        public double derivativeOutputActivation(double x)
+        {
+            //for softmax, not used for an individual neuron
+            return x;
         }
         public void firstLayerSetup(double actV)
         {
