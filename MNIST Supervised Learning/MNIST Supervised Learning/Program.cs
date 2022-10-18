@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MNIST_Supervised_Learning
@@ -13,7 +14,7 @@ namespace MNIST_Supervised_Learning
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        public static void Main()
+        public static async Task Main()
         {
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
@@ -23,8 +24,8 @@ namespace MNIST_Supervised_Learning
             Network.learningRate = 0.001;
             Network.momentumScalar = 0.0001;
             Network.batchSize = 200;
-            Network mainNN = new Network(new int[] { 784, 200, 10 });
-            int numEpochs = 20;
+            Network mainNN = new Network(new int[] { 784, 10, 10 });
+            int numEpochs = 5;
 
             //set up training samples
             //assuming a (row x column) image
@@ -33,14 +34,19 @@ namespace MNIST_Supervised_Learning
             StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
             String line = sr.ReadLine(); //skips first line
             int setupIdx = 0;
+            List<Task> samplesToAdd = new List<Task>();
             while ((line = sr.ReadLine()) != null)
             {
-                if (line != null)
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(o => createSample(line, trainingSamples)));
-                //createSample(nn, line, trainingSamples);
+                //await createSample(line, trainingSamples);
+                Task t = createSample(line, trainingSamples);
+                samplesToAdd.Add(t);
                 Console.WriteLine($"Sample: {setupIdx}");
                 setupIdx++;
             }
+
+            Task.WaitAll(samplesToAdd.ToArray());
+
+            Console.WriteLine("Ready to train");
 
             //train network
             for (int epoch = 0; epoch < numEpochs; epoch++)
@@ -48,37 +54,17 @@ namespace MNIST_Supervised_Learning
                 double mse = 0;
                 int numBatches = trainingSamples.Count / Network.batchSize;
 
-                //batching and thread pooling
-                for (int batchIdx = 0; batchIdx < numBatches - 1; batchIdx++)
+                //batching
+                for (int batchIdx = 0; batchIdx < numBatches; batchIdx++)
                 {
-                    List<double> sampleMses = new List<double>();
-                    List<Network> sampleNNs = new List<Network>();
-                    for (int sampleIdx = 0; sampleIdx < Network.batchSize - 1; sampleIdx++) //remove the -1. temp fix
+                    double batchMse = 0;
+                    for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
                     {
-                        //trainSample(batchIdx, sampleIdx, nn, trainingSamples, batchMse);
-                        Network sampleNN = new Network(mainNN);
-                        sampleNNs.Add(sampleNN);
-                        ThreadPool.QueueUserWorkItem(new WaitCallback(o => trainSample(batchIdx, sampleIdx, sampleNN, trainingSamples, sampleMses)));
+                        //Console.WriteLine($"1    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
+                        batchMse += await trainSample(batchIdx, sampleIdx, mainNN, trainingSamples);
                     }
 
-                    sampleNNs.ForEach(sampleNN =>
-                    {
-                        for (int layerIdx = 0; layerIdx < mainNN.layers.Count; layerIdx++)
-                        {
-                            for (int neuronIdx = 0; neuronIdx < mainNN.layers[layerIdx].Count; neuronIdx++)
-                            {
-                                Neuron mainNeuron = mainNN.layers[layerIdx][neuronIdx];
-                                Neuron sampleNeuron = sampleNN.layers[layerIdx][neuronIdx];
-                                for (int i = 0; i < mainNeuron.weightGradients.Length; i++)
-                                    mainNeuron.weightGradients[i] += sampleNeuron.weightGradients[i];
-                                mainNeuron.biasGradient += sampleNeuron.biasGradient;
-                            }
-                        }
-                    });
-
-                    double batchMse = 0;
-                    //Thread.Sleep(1000);
-                    sampleMses.ForEach(sampleMse => batchMse += sampleMse);
+                    Console.WriteLine("Total: " + batchMse);
                     mse += batchMse / Network.batchSize;
                     mainNN.updateWeightsAndBiases();
                     Console.WriteLine($"Epoch {epoch + 1} / {numEpochs}      Batch #{batchIdx + 1} / {numBatches}      BMSE = {batchMse / Network.batchSize}");
@@ -118,36 +104,54 @@ namespace MNIST_Supervised_Learning
             #endregion
         }
 
-        public static void createSample(String line, List<TrainingSample> trainingSamples)
+        public static async Task updateGradients(Network mainNN, Network sampleNN)
         {
-            if (line == null)
-                return; 
-
-            String[] dividedString = line.Split(',');
-
-            //standardize inputs
-            double[] standardizedPixelValues = new double[784];
-            for (int i = 0; i < standardizedPixelValues.Length; i++)
-                standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 256.0;
-
-            //classify output
-            double[] targets = new double[10];
-            int trgIndex = int.Parse(dividedString[0]);
-            targets[trgIndex] = 1;
-
-            lock (trainingSamples)
+            for (int layerIdx = 0; layerIdx < mainNN.layers.Count; layerIdx++)
             {
-                trainingSamples.Add(new TrainingSample(standardizedPixelValues, targets));
+                for (int neuronIdx = 0; neuronIdx < mainNN.layers[layerIdx].Count; neuronIdx++)
+                {
+                    Neuron mainNeuron = mainNN.layers[layerIdx][neuronIdx];
+                    Neuron sampleNeuron = sampleNN.layers[layerIdx][neuronIdx];
+                    for (int i = 0; i < mainNeuron.weightGradients.Length; i++)
+                        mainNeuron.weightGradients[i] += sampleNeuron.weightGradients[i];
+                    mainNeuron.biasGradient += sampleNeuron.biasGradient;
+                }
             }
         }
 
-        public static void trainSample(int batchIdx, int sampleIdx, Network nn, List<TrainingSample> trainingSamples, List<double> sampleMses)
+        public static async Task createSample(String line, List<TrainingSample> trainingSamples)
         {
-            double sampleMse = nn.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
-            lock (sampleMses)
+            await Task.Run(() =>
             {
-                sampleMses.Add(sampleMse);
-            }
+                if (line == null)
+                    return;
+
+                String[] dividedString = line.Split(',');
+
+                //standardize inputs
+                double[] standardizedPixelValues = new double[784];
+                for (int i = 0; i < standardizedPixelValues.Length; i++)
+                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 256.0;
+
+                //classify output
+                double[] targets = new double[10];
+                int trgIndex = int.Parse(dividedString[0]);
+                targets[trgIndex] = 1;
+
+                lock (trainingSamples)
+                {
+                    trainingSamples.Add(new TrainingSample(standardizedPixelValues, targets));
+                }
+            });
+        }
+
+        public static async Task<double> trainSample(int batchIdx, int sampleIdx, Network mainNN, List<TrainingSample> trainingSamples)
+        {
+            Network sampleNN = new Network(mainNN);
+            double sampleMse = sampleNN.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
+            await updateGradients(mainNN, sampleNN);
+            //Console.WriteLine($"2    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
+            return sampleMse;
         }
     }
 }
