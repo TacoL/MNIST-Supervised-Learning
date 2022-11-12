@@ -21,11 +21,11 @@ namespace MNIST_Supervised_Learning
             //Application.Run(new Form1());
 
             //set up the network
-            Network.learningRate = 0.01;
+            Network.learningRate = 0.05;
             Network.momentumScalar = 0.001;
-            Network.batchSize = 2000;
-            Network mainNN = new Network(new int[] { 784, 10, 10 });
-            int numEpochs = 5;
+            Network.batchSize = 60000;
+            Network mainNN = new Network(new int[] { 784, 1000, 10 });
+            int numEpochs = 10;
 
             //set up training samples
             //assuming a (row x column) image
@@ -37,13 +37,14 @@ namespace MNIST_Supervised_Learning
             List<Task> samplesToAdd = new List<Task>();
             while ((line = sr.ReadLine()) != null)
             {
-                //await createSample(line, trainingSamples);
-                Task t = createSample(line, trainingSamples);
+                String lineDuplicate = line;
+                Task t = new Task(() => createSample(lineDuplicate, trainingSamples));
                 samplesToAdd.Add(t);
                 Console.WriteLine($"Sample: {setupIdx}");
                 setupIdx++;
             }
 
+            samplesToAdd.ForEach(task => task.Start());
             Task.WaitAll(samplesToAdd.ToArray());
 
             Console.WriteLine("Ready to train");
@@ -113,37 +114,40 @@ namespace MNIST_Supervised_Learning
             }
         }
 
-        public static async Task createSample(String line, List<TrainingSample> trainingSamples)
+        public static void createSample(String line, List<TrainingSample> trainingSamples)
         {
-            await Task.Run(() =>
+            if (line == null)
             {
-                if (line == null)
-                    return;
+                Console.WriteLine("line is null");
+                return;
+            }
 
-                String[] dividedString = line.Split(',');
+            String[] dividedString = line.Split(',');
 
-                //standardize inputs
-                double[] standardizedPixelValues = new double[784];
-                for (int i = 0; i < standardizedPixelValues.Length; i++)
-                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 255.0;
+            //standardize inputs
+            double[] standardizedPixelValues = new double[784];
+            for (int i = 0; i < standardizedPixelValues.Length; i++)
+                standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 255.0;
 
-                //classify output
-                double[] targets = new double[10];
-                int trgIndex = int.Parse(dividedString[0]);
-                targets[trgIndex] = 1;
+            //classify output
+            double[] targets = new double[10];
+            int trgIndex = int.Parse(dividedString[0]);
+            targets[trgIndex] = 1;
 
-                lock (trainingSamples)
-                {
-                    trainingSamples.Add(new TrainingSample(standardizedPixelValues, targets));
-                }
-            });
+            lock (trainingSamples)
+            {
+                trainingSamples.Add(new TrainingSample(standardizedPixelValues, targets));
+            }
         }
 
         public static double trainSample(int batchIdx, int sampleIdx, Network mainNN, List<TrainingSample> trainingSamples)
         {
             Network sampleNN = new Network(mainNN);
             double sampleMse = sampleNN.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
-            addToGradients(mainNN, sampleNN); //idea: perhaps lock the mainNN for this part?
+            lock (mainNN)
+            {
+                addToGradients(mainNN, sampleNN); //idea: perhaps lock the mainNN for this part?
+            }
             return sampleMse;
         }
 
@@ -153,8 +157,6 @@ namespace MNIST_Supervised_Learning
             List<Task> tasks = new List<Task>();
             for (int sampleIdx = 0; sampleIdx < Network.batchSize - 1; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
             {
-                //Console.WriteLine($"1    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
-                //batchMse += await Task.Run(() => trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
                 Task task = new Task(() => batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
                 tasks.Add(task);
             }
