@@ -21,9 +21,9 @@ namespace MNIST_Supervised_Learning
             //Application.Run(new Form1());
 
             //set up the network
-            Network.learningRate = 0.001;
-            Network.momentumScalar = 0.0001;
-            Network.batchSize = 200;
+            Network.learningRate = 0.01;
+            Network.momentumScalar = 0.001;
+            Network.batchSize = 2000;
             Network mainNN = new Network(new int[] { 784, 10, 10 });
             int numEpochs = 5;
 
@@ -57,9 +57,8 @@ namespace MNIST_Supervised_Learning
                 //batching
                 for (int batchIdx = 0; batchIdx < numBatches; batchIdx++) //for each batch
                 {
-                    double batchMse = await trainBatch(batchIdx, mainNN, trainingSamples);
+                    double batchMse = trainBatch(batchIdx, mainNN, trainingSamples);
 
-                    Console.WriteLine("Total: " + batchMse);
                     mse += batchMse / Network.batchSize;
                     mainNN.updateWeightsAndBiases();
                     Console.WriteLine($"Epoch {epoch + 1} / {numEpochs}      Batch #{batchIdx + 1} / {numBatches}      BMSE = {batchMse / Network.batchSize}");
@@ -148,14 +147,20 @@ namespace MNIST_Supervised_Learning
             return sampleMse;
         }
 
-        public static async Task<double> trainBatch(int batchIdx, Network mainNN, List<TrainingSample> trainingSamples)
+        public static double trainBatch(int batchIdx, Network mainNN, List<TrainingSample> trainingSamples)
         {
             double batchMse = 0;
-            for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
+            List<Task> tasks = new List<Task>();
+            for (int sampleIdx = 0; sampleIdx < Network.batchSize - 1; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
             {
                 //Console.WriteLine($"1    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
-                batchMse += await Task.Run(() => trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
+                //batchMse += await Task.Run(() => trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
+                Task task = new Task(() => batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
+                tasks.Add(task);
             }
+
+            tasks.ForEach(task => task.Start());
+            Task.WaitAll(tasks.ToArray());
             return batchMse;
         }
     }
