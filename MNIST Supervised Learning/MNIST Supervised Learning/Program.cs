@@ -55,14 +55,9 @@ namespace MNIST_Supervised_Learning
                 int numBatches = trainingSamples.Count / Network.batchSize;
 
                 //batching
-                for (int batchIdx = 0; batchIdx < numBatches; batchIdx++)
+                for (int batchIdx = 0; batchIdx < numBatches; batchIdx++) //for each batch
                 {
-                    double batchMse = 0;
-                    for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
-                    {
-                        //Console.WriteLine($"1    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
-                        batchMse += await trainSample(batchIdx, sampleIdx, mainNN, trainingSamples);
-                    }
+                    double batchMse = await trainBatch(batchIdx, mainNN, trainingSamples);
 
                     Console.WriteLine("Total: " + batchMse);
                     mse += batchMse / Network.batchSize;
@@ -87,7 +82,7 @@ namespace MNIST_Supervised_Learning
                 //standardize inputs
                 double[] standardizedPixelValues = new double[784];
                 for (int i = 0; i < standardizedPixelValues.Length; i++)
-                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 256.0;
+                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 255.0;
 
                 //print output
                 double[] output = mainNN.forwardPropagate(standardizedPixelValues);
@@ -104,7 +99,7 @@ namespace MNIST_Supervised_Learning
             #endregion
         }
 
-        public static async Task updateGradients(Network mainNN, Network sampleNN)
+        public static void addToGradients(Network mainNN, Network sampleNN)
         {
             for (int layerIdx = 0; layerIdx < mainNN.layers.Count; layerIdx++)
             {
@@ -131,7 +126,7 @@ namespace MNIST_Supervised_Learning
                 //standardize inputs
                 double[] standardizedPixelValues = new double[784];
                 for (int i = 0; i < standardizedPixelValues.Length; i++)
-                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 256.0;
+                    standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 255.0;
 
                 //classify output
                 double[] targets = new double[10];
@@ -145,13 +140,23 @@ namespace MNIST_Supervised_Learning
             });
         }
 
-        public static async Task<double> trainSample(int batchIdx, int sampleIdx, Network mainNN, List<TrainingSample> trainingSamples)
+        public static double trainSample(int batchIdx, int sampleIdx, Network mainNN, List<TrainingSample> trainingSamples)
         {
             Network sampleNN = new Network(mainNN);
             double sampleMse = sampleNN.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
-            await updateGradients(mainNN, sampleNN);
-            //Console.WriteLine($"2    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
+            addToGradients(mainNN, sampleNN); //idea: perhaps lock the mainNN for this part?
             return sampleMse;
+        }
+
+        public static async Task<double> trainBatch(int batchIdx, Network mainNN, List<TrainingSample> trainingSamples)
+        {
+            double batchMse = 0;
+            for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
+            {
+                //Console.WriteLine($"1    Sample Index: {batchIdx * Network.batchSize + sampleIdx}    BatchIdx: {batchIdx}   SampleIdx: {sampleIdx}   : {trainingSamples.Count}");
+                batchMse += await Task.Run(() => trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
+            }
+            return batchMse;
         }
     }
 }

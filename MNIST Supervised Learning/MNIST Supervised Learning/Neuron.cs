@@ -36,9 +36,9 @@ namespace MNIST_Supervised_Learning
         {
             output = original.output;
 
-            neuronValue = original.neuronValue;
-            activationValue = original.activationValue;
-            neuronGradient = original.neuronGradient;
+            neuronValue = 0;
+            activationValue = 0;
+            neuronGradient = 0;
 
             weights = new double[original.weights.Length];
             weightGradients = new double[original.weightGradients.Length];
@@ -48,8 +48,8 @@ namespace MNIST_Supervised_Learning
                 weights[weightIdx] = original.weights[weightIdx];
 
             bias = original.bias;
-            biasGradient = original.biasGradient;
-            previousBG = original.previousBG;
+            biasGradient = 0;
+            previousBG = 0;
         }
 
         public void calcActivationValue(List<Neuron> inputNeurons)
@@ -66,12 +66,14 @@ namespace MNIST_Supervised_Learning
 
         public double activationFunction(double x)
         {
-            return Math.Tanh(x);
+            return Math.Tanh(x/125);
         }
 
         public double derivativeActivation(double x)
         {
-            return 1 - Math.Pow(Math.Tanh(x), 2);
+            //return 1 - Math.Pow(Math.Tanh(x), 2);
+            double secant = 2.0 / (Math.Exp(x/125) + Math.Exp(-x/125));
+            return Math.Pow(secant, 2) / 125.0;
         }
 
         public double outputActivation(double x)
