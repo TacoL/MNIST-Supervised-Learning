@@ -21,11 +21,11 @@ namespace MNIST_Supervised_Learning
             //Application.Run(new Form1());
 
             //set up the network
-            Network.learningRate = 0.05;
-            Network.momentumScalar = 0.001;
-            Network.batchSize = 60000;
+            Network.learningRate = 0.1;
+            Network.momentumScalar = 0.005;
+            Network.batchSize = 60000 / 4;
             Network mainNN = new Network(new int[] { 784, 1000, 10 });
-            int numEpochs = 10;
+            int numEpochs = 16;
 
             //set up training samples
             //assuming a (row x column) image
@@ -47,6 +47,7 @@ namespace MNIST_Supervised_Learning
             samplesToAdd.ForEach(task => task.Start());
             Task.WaitAll(samplesToAdd.ToArray());
 
+            sr.Close();
             Console.WriteLine("Ready to train");
 
             //train network
@@ -70,14 +71,22 @@ namespace MNIST_Supervised_Learning
 
             #region RESULTS
             //results
-            StreamReader srTest = new StreamReader(File.OpenRead("mnist_test.csv"));
-            line = srTest.ReadLine(); //skips first line
+            testNetwork(mainNN, "mnist_train.csv");
+            testNetwork(mainNN, "mnist_test.csv");
+            #endregion
+        }
+
+        public static void testNetwork(Network mainNN, string fileName)
+        {
+            StreamReader srTest = new StreamReader(File.OpenRead(fileName));
+            String line = srTest.ReadLine(); //skips first line
 
             int successes = 0;
             int total = 0;
             while ((line = srTest.ReadLine()) != null)
             {
-                String[] dividedString = line.Split(',');
+                String lineDuplicate = line;
+                String[] dividedString = lineDuplicate.Split(',');
 
                 //standardize inputs
                 double[] standardizedPixelValues = new double[784];
@@ -85,7 +94,8 @@ namespace MNIST_Supervised_Learning
                     standardizedPixelValues[i] = double.Parse(dividedString[i + 1]) / 255.0;
 
                 //print output
-                double[] output = mainNN.forwardPropagate(standardizedPixelValues);
+                Network sampleNN = new Network(mainNN);
+                double[] output = sampleNN.forwardPropagate(standardizedPixelValues);
                 int label = int.Parse(dividedString[0]);
                 int val = output.ToList().IndexOf(output.Max());
                 if (val == label)
@@ -93,10 +103,9 @@ namespace MNIST_Supervised_Learning
                 total++;
             }
 
+            srTest.Close();
             Console.WriteLine($"{successes}, {total}");
             Console.WriteLine("Success Rate: " + ((double)successes / (double)total * 100d) + "%");
-
-            #endregion
         }
 
         public static void addToGradients(Network mainNN, Network sampleNN)
