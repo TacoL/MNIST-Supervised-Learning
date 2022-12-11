@@ -24,8 +24,10 @@ namespace MNIST_Supervised_Learning
             weights = new double[numInputs];
             weightGradients = new double[numInputs];
             previousWG = new double[numInputs];
+
+            double y = 1 / Math.Sqrt(numInputs);
             for (int weightIdx = 0; weightIdx < weights.Length; weightIdx++)
-                weights[weightIdx] = Network.r.NextDouble();
+                weights[weightIdx] = Network.r.NextDouble() * y * (Network.r.NextDouble() > .5 ? 1 : -1);
 
             bias = 0;
             biasGradient = 0;
