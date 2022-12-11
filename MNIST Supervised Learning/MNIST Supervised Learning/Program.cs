@@ -21,31 +21,67 @@ namespace MNIST_Supervised_Learning
             //Application.Run(new Form1());
 
             //set up the network
-            Network.learningRate = 0.1;
-            Network.momentumScalar = 0.005;
-            Network.batchSize = 60000 / 4;
-            Network mainNN = new Network(new int[] { 784, 1000, 10 });
-            int numEpochs = 16;
+            Network.learningRate = 0.22;
+            Network.momentumScalar = 0.12;
+            Network.batchSize = 150;
+            Network mainNN = new Network(new int[] { 4, 8, 3 });
+            int numEpochs = 5000;
 
             //set up training samples
             //assuming a (row x column) image
 
             List<TrainingSample> trainingSamples = new List<TrainingSample>();
-            StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
+
+            //Iris
+            StreamReader sr = new StreamReader(File.OpenRead("IRIS.csv"));
             String line = sr.ReadLine(); //skips first line
-            int setupIdx = 0;
-            List<Task> samplesToAdd = new List<Task>();
             while ((line = sr.ReadLine()) != null)
             {
-                String lineDuplicate = line;
-                Task t = new Task(() => createSample(lineDuplicate, trainingSamples));
-                samplesToAdd.Add(t);
-                Console.WriteLine($"Sample: {setupIdx}");
-                setupIdx++;
+                double[] inputs = new double[4];
+                double[] targets = new double[3];
+                String[] dividedString = line.Split(',');
+
+                for (int i = 0; i < 4; i++)
+                    inputs[i] = double.Parse(dividedString[i]);
+
+                switch (dividedString[4])
+                {
+                    case "Iris-setosa":
+                        targets[0] = 1;
+                        targets[1] = 0;
+                        targets[2] = 0;
+                        break;
+                    case "Iris-versicolor":
+                        targets[0] = 0;
+                        targets[1] = 1;
+                        targets[2] = 0;
+                        break;
+                    case "Iris-virginica":
+                        targets[0] = 0;
+                        targets[1] = 0;
+                        targets[2] = 1;
+                        break;
+                }
+
+                trainingSamples.Add(new TrainingSample(inputs, targets));
             }
 
-            samplesToAdd.ForEach(task => task.Start());
-            Task.WaitAll(samplesToAdd.ToArray());
+
+            //StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
+            //String line = sr.ReadLine(); //skips first line
+            //int setupIdx = 0;
+            //List<Task> samplesToAdd = new List<Task>();
+            //while ((line = sr.ReadLine()) != null)
+            //{
+            //    String lineDuplicate = line;
+            //    Task t = new Task(() => createSample(lineDuplicate, trainingSamples));
+            //    samplesToAdd.Add(t);
+            //    Console.WriteLine($"Sample: {setupIdx}");
+            //    setupIdx++;
+            //}
+
+            //samplesToAdd.ForEach(task => task.Start());
+            //Task.WaitAll(samplesToAdd.ToArray());
 
             sr.Close();
             Console.WriteLine("Ready to train");
@@ -71,8 +107,40 @@ namespace MNIST_Supervised_Learning
 
             #region RESULTS
             //results
-            testNetwork(mainNN, "mnist_train.csv");
-            testNetwork(mainNN, "mnist_test.csv");
+            //testNetwork(mainNN, "mnist_train.csv");
+            //testNetwork(mainNN, "mnist_test.csv");
+
+            //IRIS
+            int successes = 0;
+
+            for (int sampleIdx = 0; sampleIdx < trainingSamples.Count; sampleIdx++)
+            {
+                double[] output = mainNN.forwardPropagate(trainingSamples[sampleIdx].inputs);
+
+                int indexOfMaxValue = 0;
+                for (int idx = 0; idx < output.Length; idx++)
+                {
+                    if (output[idx] > output[indexOfMaxValue])
+                    {
+                        indexOfMaxValue = idx;
+                    }
+                }
+
+                double[] targets = trainingSamples[sampleIdx].targets;
+
+                String[] names = { "Iris-setosa", "Iris-versicolor", "Iris-virginica" };
+                if (targets[indexOfMaxValue] == 1)
+                {
+                    Console.WriteLine("Match: " + names[indexOfMaxValue]);
+                    successes++;
+                }
+                else
+                {
+                    Console.WriteLine("Error: Predicted = " + names[indexOfMaxValue] + ", Actual = ");
+                }
+            }
+
+            Console.WriteLine(successes + "/" + trainingSamples.Count);
             #endregion
         }
 
@@ -163,15 +231,20 @@ namespace MNIST_Supervised_Learning
         public static double trainBatch(int batchIdx, Network mainNN, List<TrainingSample> trainingSamples)
         {
             double batchMse = 0;
-            List<Task> tasks = new List<Task>();
-            for (int sampleIdx = 0; sampleIdx < Network.batchSize - 1; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
-            {
-                Task task = new Task(() => batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
-                tasks.Add(task);
-            }
+            //List<Task> tasks = new List<Task>();
+            //for (int sampleIdx = 0; sampleIdx < Network.batchSize - 1; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
+            //{
+            //    Task task = new Task(() => batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
+            //    tasks.Add(task);
+            //}
 
-            tasks.ForEach(task => task.Start());
-            Task.WaitAll(tasks.ToArray());
+            //tasks.ForEach(task => task.Start());
+            //Task.WaitAll(tasks.ToArray());
+
+            for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
+            {
+                batchMse += mainNN.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
+            }
             return batchMse;
         }
     }

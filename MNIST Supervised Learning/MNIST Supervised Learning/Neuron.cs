@@ -11,11 +11,11 @@ namespace MNIST_Supervised_Learning
         public double neuronValue, activationValue, bias, neuronGradient, biasGradient, previousBG;
         public double[] weights, weightGradients, previousWG;
 
-        private Boolean output;
+        private bool output;
 
-        public Neuron(int numInputs, Boolean output)
+        public Neuron(int numInputs, bool output)
         {
-            this.output = output; 
+            this.output = output;
 
             neuronValue = 0;
             activationValue = 0;
@@ -66,15 +66,21 @@ namespace MNIST_Supervised_Learning
 
         public double activationFunction(double x)
         {
-            return Math.Tanh(x/125);
-            //return Math.Tanh(x);
+            return Math.Tanh(x);
+
+            //return Math.Tanh(x/125);
+
+            //return x <= 0 ? 0 : activationValue;
         }
 
         public double derivativeActivation(double x)
         {
-            //return 1 - Math.Pow(Math.Tanh(x), 2);
-            double secant = 2.0 / (Math.Exp(x/125) + Math.Exp(-x/125));
-            return Math.Pow(secant, 2) / 125.0;
+            return 1 - Math.Pow(Math.Tanh(x), 2);
+
+            //double secant = 2.0 / (Math.Exp(x/125) + Math.Exp(-x/125));
+            //return Math.Pow(secant, 2) / 125.0;
+
+            //return x <= 0 ? 0 : 1;
         }
 
         public double outputActivation(double x)
