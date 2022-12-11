@@ -23,7 +23,7 @@ namespace MNIST_Supervised_Learning
             Network.learningRate = 0.1;
             Network.momentumScalar = 0.01;
             Network.batchSize = 32;
-            Network mainNN = new Network(new int[] { 784, 50, 10 });
+            Network mainNN = new Network(new int[] { 784, 100, 10 });
             int numEpochs = 15;
 
             //set up training samples
