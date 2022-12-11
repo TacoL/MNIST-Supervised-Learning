@@ -37,7 +37,7 @@ namespace MNIST_Supervised_Learning
                         UseVisualStyleBackColor = true
                     };
                     //newButton.MouseEnter += new System.EventHandler(button_Enter);
-                    newButton.MouseUp += new System.Windows.Forms.MouseEventHandler(button_Down);
+                    newButton.MouseDown += new System.Windows.Forms.MouseEventHandler(button_Down);
                     buttons.Add(newButton);
                     Controls.Add(newButton);
                 }
