@@ -219,32 +219,37 @@ namespace MNIST_Supervised_Learning
 
         public static double trainSample(int batchIdx, int sampleIdx, Network mainNN, List<TrainingSample> trainingSamples)
         {
+            double sampleMse = 0;
+
             Network sampleNN = new Network(mainNN);
-            double sampleMse = sampleNN.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
+            int sampleIdxToTest = batchIdx * Network.batchSize + sampleIdx;
+            sampleMse = sampleNN.backPropagate(trainingSamples[sampleIdxToTest].inputs, trainingSamples[sampleIdxToTest].targets);
             lock (mainNN)
             {
                 addToGradients(mainNN, sampleNN); //idea: perhaps lock the mainNN for this part?
             }
+
             return sampleMse;
         }
 
         public static double trainBatch(int batchIdx, Network mainNN, List<TrainingSample> trainingSamples)
         {
             double batchMse = 0;
-            //List<Task> tasks = new List<Task>();
-            //for (int sampleIdx = 0; sampleIdx < Network.batchSize - 1; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
-            //{
-            //    Task task = new Task(() => batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples));
-            //    tasks.Add(task);
-            //}
 
-            //tasks.ForEach(task => task.Start());
-            //Task.WaitAll(tasks.ToArray());
-
-            for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++) //delete the -1, for some reason without it, it's causing some index out of bounds error
+            List<Task> tasks = new List<Task>();
+            for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
             {
-                batchMse += mainNN.backPropagate(trainingSamples[batchIdx * Network.batchSize + sampleIdx].inputs, trainingSamples[batchIdx * Network.batchSize + sampleIdx].targets);
+                int thisSampleIdx = sampleIdx; // makes it work with Tasks
+                tasks.Add(new Task(() => batchMse += trainSample(batchIdx, thisSampleIdx, mainNN, trainingSamples)));
             }
+
+            tasks.ForEach(task => task.Start());
+            Task.WaitAll(tasks.ToArray());
+
+            //for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
+            //{
+            //    batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples);
+            //}
             return batchMse;
         }
     }
