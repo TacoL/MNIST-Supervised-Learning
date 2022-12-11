@@ -30,7 +30,7 @@ namespace MNIST_Supervised_Learning
                     Button newButton = new Button
                     {
                         Location = new System.Drawing.Point(startX + rowIdx * buttonEdgeLength, startY + colIdx * buttonEdgeLength),
-                        Name = "button" + (rowIdx + colIdx),
+                        Name = "button" + (rowIdx * 28 + colIdx),
                         Size = new System.Drawing.Size(buttonEdgeLength, buttonEdgeLength),
                         TabIndex = 0,
                         BackColor = Color.White,
