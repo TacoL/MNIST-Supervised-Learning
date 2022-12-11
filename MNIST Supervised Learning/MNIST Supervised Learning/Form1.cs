@@ -68,7 +68,7 @@ namespace MNIST_Supervised_Learning
                 button.BackColor = System.Drawing.Color.White;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void button1_Click(object sender, EventArgs e) //predict button
         {
             if (!calculating)
             {
@@ -100,6 +100,11 @@ namespace MNIST_Supervised_Learning
         private void label2_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void button1_Click_1(object sender, EventArgs e) //clear button
+        {
+            buttons.ForEach(button => button.BackColor = System.Drawing.Color.White);
         }
 
         //private void onMouseDown(object sender, MouseEventArgs e)

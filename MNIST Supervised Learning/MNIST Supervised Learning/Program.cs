@@ -20,8 +20,8 @@ namespace MNIST_Supervised_Learning
             //Application.SetCompatibleTextRenderingDefault(false);
             
             //set up the network
-            Network.learningRate = 0.1;
-            Network.momentumScalar = 0.01;
+            Network.learningRate = 0.2;
+            Network.momentumScalar = 0.02;
             Network.batchSize = 32;
             Network mainNN = new Network(new int[] { 784, 100, 10 });
             int numEpochs = 15;
