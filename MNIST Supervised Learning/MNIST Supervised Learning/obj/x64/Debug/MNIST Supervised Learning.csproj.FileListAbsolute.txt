@@ -8,3 +8,4 @@ C:\Users\tahva\OneDrive\Documents\GitHub\MNIST-Supervised-Learning\MNIST Supervi
 C:\Users\tahva\OneDrive\Documents\GitHub\MNIST-Supervised-Learning\MNIST Supervised Learning\MNIST Supervised Learning\obj\x64\Debug\MNIST Supervised Learning.csproj.CoreCompileInputs.cache
 C:\Users\tahva\OneDrive\Documents\GitHub\MNIST-Supervised-Learning\MNIST Supervised Learning\MNIST Supervised Learning\obj\x64\Debug\MNIST Supervised Learning.exe
 C:\Users\tahva\OneDrive\Documents\GitHub\MNIST-Supervised-Learning\MNIST Supervised Learning\MNIST Supervised Learning\obj\x64\Debug\MNIST Supervised Learning.pdb
+C:\Users\tahva\OneDrive\Documents\GitHub\MNIST-Supervised-Learning\MNIST Supervised Learning\MNIST Supervised Learning\obj\x64\Debug\MNIST_Supervised_Learning.Form1.resources

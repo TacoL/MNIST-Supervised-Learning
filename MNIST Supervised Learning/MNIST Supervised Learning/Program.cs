@@ -18,14 +18,13 @@ namespace MNIST_Supervised_Learning
         {
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);
-            //Application.Run(new Form1());
-
+            
             //set up the network
-            Network.learningRate = 0.22;
-            Network.momentumScalar = 0.12;
-            Network.batchSize = 50;
-            Network mainNN = new Network(new int[] { 4, 8, 3 });
-            int numEpochs = 5000;
+            Network.learningRate = 0.1;
+            Network.momentumScalar = 0.01;
+            Network.batchSize = 32;
+            Network mainNN = new Network(new int[] { 784, 20, 10 });
+            int numEpochs = 15;
 
             //set up training samples
             //assuming a (row x column) image
@@ -33,55 +32,55 @@ namespace MNIST_Supervised_Learning
             List<TrainingSample> trainingSamples = new List<TrainingSample>();
 
             //Iris
-            StreamReader sr = new StreamReader(File.OpenRead("IRIS.csv"));
-            String line = sr.ReadLine(); //skips first line
-            while ((line = sr.ReadLine()) != null)
-            {
-                double[] inputs = new double[4];
-                double[] targets = new double[3];
-                String[] dividedString = line.Split(',');
-
-                for (int i = 0; i < 4; i++)
-                    inputs[i] = double.Parse(dividedString[i]);
-
-                switch (dividedString[4])
-                {
-                    case "Iris-setosa":
-                        targets[0] = 1;
-                        targets[1] = 0;
-                        targets[2] = 0;
-                        break;
-                    case "Iris-versicolor":
-                        targets[0] = 0;
-                        targets[1] = 1;
-                        targets[2] = 0;
-                        break;
-                    case "Iris-virginica":
-                        targets[0] = 0;
-                        targets[1] = 0;
-                        targets[2] = 1;
-                        break;
-                }
-
-                trainingSamples.Add(new TrainingSample(inputs, targets));
-            }
-
-
-            //StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
+            //StreamReader sr = new StreamReader(File.OpenRead("IRIS.csv"));
             //String line = sr.ReadLine(); //skips first line
-            //int setupIdx = 0;
-            //List<Task> samplesToAdd = new List<Task>();
             //while ((line = sr.ReadLine()) != null)
             //{
-            //    String lineDuplicate = line;
-            //    Task t = new Task(() => createSample(lineDuplicate, trainingSamples));
-            //    samplesToAdd.Add(t);
-            //    Console.WriteLine($"Sample: {setupIdx}");
-            //    setupIdx++;
+            //    double[] inputs = new double[4];
+            //    double[] targets = new double[3];
+            //    String[] dividedString = line.Split(',');
+
+            //    for (int i = 0; i < 4; i++)
+            //        inputs[i] = double.Parse(dividedString[i]);
+
+            //    switch (dividedString[4])
+            //    {
+            //        case "Iris-setosa":
+            //            targets[0] = 1;
+            //            targets[1] = 0;
+            //            targets[2] = 0;
+            //            break;
+            //        case "Iris-versicolor":
+            //            targets[0] = 0;
+            //            targets[1] = 1;
+            //            targets[2] = 0;
+            //            break;
+            //        case "Iris-virginica":
+            //            targets[0] = 0;
+            //            targets[1] = 0;
+            //            targets[2] = 1;
+            //            break;
+            //    }
+
+            //    trainingSamples.Add(new TrainingSample(inputs, targets));
             //}
 
-            //samplesToAdd.ForEach(task => task.Start());
-            //Task.WaitAll(samplesToAdd.ToArray());
+
+            StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
+            String line = sr.ReadLine(); //skips first line
+            int setupIdx = 0;
+            List<Task> samplesToAdd = new List<Task>();
+            while ((line = sr.ReadLine()) != null)
+            {
+                String lineDuplicate = line;
+                Task t = new Task(() => createSample(lineDuplicate, trainingSamples));
+                samplesToAdd.Add(t);
+                Console.WriteLine($"Sample: {setupIdx}");
+                setupIdx++;
+            }
+
+            samplesToAdd.ForEach(task => task.Start());
+            Task.WaitAll(samplesToAdd.ToArray());
 
             sr.Close();
             Console.WriteLine("Ready to train");
@@ -99,7 +98,7 @@ namespace MNIST_Supervised_Learning
 
                     mse += batchMse / Network.batchSize;
                     mainNN.updateWeightsAndBiases();
-                    Console.WriteLine($"Epoch {epoch + 1} / {numEpochs}      Batch #{batchIdx + 1} / {numBatches}      BMSE = {batchMse / Network.batchSize}");
+                    //Console.WriteLine($"Epoch {epoch + 1} / {numEpochs}      Batch #{batchIdx + 1} / {numBatches}      BMSE = {batchMse / Network.batchSize}");
                 }
 
                 Console.WriteLine("Epoch: {0}         MSE: {1}", epoch + 1, mse / numBatches);
@@ -107,41 +106,43 @@ namespace MNIST_Supervised_Learning
 
             #region RESULTS
             //results
-            //testNetwork(mainNN, "mnist_train.csv");
-            //testNetwork(mainNN, "mnist_test.csv");
+            testNetwork(mainNN, "mnist_train.csv");
+            testNetwork(mainNN, "mnist_test.csv");
 
             //IRIS
-            int successes = 0;
+            //int successes = 0;
 
-            for (int sampleIdx = 0; sampleIdx < trainingSamples.Count; sampleIdx++)
-            {
-                double[] output = mainNN.forwardPropagate(trainingSamples[sampleIdx].inputs);
+            //for (int sampleIdx = 0; sampleIdx < trainingSamples.Count; sampleIdx++)
+            //{
+            //    double[] output = mainNN.forwardPropagate(trainingSamples[sampleIdx].inputs);
 
-                int indexOfMaxValue = 0;
-                for (int idx = 0; idx < output.Length; idx++)
-                {
-                    if (output[idx] > output[indexOfMaxValue])
-                    {
-                        indexOfMaxValue = idx;
-                    }
-                }
+            //    int indexOfMaxValue = 0;
+            //    for (int idx = 0; idx < output.Length; idx++)
+            //    {
+            //        if (output[idx] > output[indexOfMaxValue])
+            //        {
+            //            indexOfMaxValue = idx;
+            //        }
+            //    }
 
-                double[] targets = trainingSamples[sampleIdx].targets;
+            //    double[] targets = trainingSamples[sampleIdx].targets;
 
-                String[] names = { "Iris-setosa", "Iris-versicolor", "Iris-virginica" };
-                if (targets[indexOfMaxValue] == 1)
-                {
-                    Console.WriteLine("Match: " + names[indexOfMaxValue]);
-                    successes++;
-                }
-                else
-                {
-                    Console.WriteLine("Error: Predicted = " + names[indexOfMaxValue] + ", Actual = ");
-                }
-            }
+            //    String[] names = { "Iris-setosa", "Iris-versicolor", "Iris-virginica" };
+            //    if (targets[indexOfMaxValue] == 1)
+            //    {
+            //        Console.WriteLine("Match: " + names[indexOfMaxValue]);
+            //        successes++;
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("Error: Predicted = " + names[indexOfMaxValue] + ", Actual = ");
+            //    }
+            //}
 
-            Console.WriteLine(successes + "/" + trainingSamples.Count);
+            //Console.WriteLine(successes + "/" + trainingSamples.Count);
             #endregion
+
+            //Application.Run(new Form1(mainNN));
         }
 
         public static void testNetwork(Network mainNN, string fileName)
