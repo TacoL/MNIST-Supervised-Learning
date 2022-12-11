@@ -142,7 +142,7 @@ namespace MNIST_Supervised_Learning
             //Console.WriteLine(successes + "/" + trainingSamples.Count);
             #endregion
 
-            //Application.Run(new Form1(mainNN));
+            Application.Run(new Form1(mainNN));
         }
 
         public static void testNetwork(Network mainNN, string fileName)
