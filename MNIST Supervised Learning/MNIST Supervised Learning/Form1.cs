@@ -13,6 +13,7 @@ namespace MNIST_Supervised_Learning
     public partial class Form1 : Form
     {
         bool mouseDown = false;
+        bool calculating = false;
         Network neuralNet;
         List<Button> buttons = new List<Button>();
         public Form1(Network mainNN)
@@ -45,7 +46,7 @@ namespace MNIST_Supervised_Learning
             //MouseDown += onMouseDown;
             //MouseUp += onMouseUp;
 
-            neuralNet = mainNN;
+            neuralNet = new Network(mainNN);
         }
 
         private void button_Enter(object sender, EventArgs e)
@@ -69,20 +70,26 @@ namespace MNIST_Supervised_Learning
 
         private void button1_Click(object sender, EventArgs e)
         {
-            double[] inputs = new double[28 * 28];
-            int idx = 0;
-            buttons.ForEach(button =>
+            if (!calculating)
             {
-                if (button.BackColor == System.Drawing.Color.White)
-                    inputs[idx] = 0;
-                else
-                    inputs[idx] = 1;
+                calculating = true;
+                label2.Text = "Calculating...";
+                double[] inputs = new double[28 * 28];
+                int idx = 0;
+                buttons.ForEach(button =>
+                {
+                    if (button.BackColor == System.Drawing.Color.White)
+                        inputs[idx] = 0;
+                    else
+                        inputs[idx] = 1;
 
-                idx++;
-            });
+                    idx++;
+                });
 
-            double[] output = neuralNet.forwardPropagate(inputs);
-            this.label2.Text = "" + output.ToList().IndexOf(output.Max());
+                double[] output = neuralNet.forwardPropagate(inputs);
+                label2.Text = "" + output.ToList().IndexOf(output.Max());
+                calculating = false;
+            }
         }
 
         private void label1_Click(object sender, EventArgs e)
