@@ -31,41 +31,6 @@ namespace MNIST_Supervised_Learning
 
             List<TrainingSample> trainingSamples = new List<TrainingSample>();
 
-            //Iris
-            //StreamReader sr = new StreamReader(File.OpenRead("IRIS.csv"));
-            //String line = sr.ReadLine(); //skips first line
-            //while ((line = sr.ReadLine()) != null)
-            //{
-            //    double[] inputs = new double[4];
-            //    double[] targets = new double[3];
-            //    String[] dividedString = line.Split(',');
-
-            //    for (int i = 0; i < 4; i++)
-            //        inputs[i] = double.Parse(dividedString[i]);
-
-            //    switch (dividedString[4])
-            //    {
-            //        case "Iris-setosa":
-            //            targets[0] = 1;
-            //            targets[1] = 0;
-            //            targets[2] = 0;
-            //            break;
-            //        case "Iris-versicolor":
-            //            targets[0] = 0;
-            //            targets[1] = 1;
-            //            targets[2] = 0;
-            //            break;
-            //        case "Iris-virginica":
-            //            targets[0] = 0;
-            //            targets[1] = 0;
-            //            targets[2] = 1;
-            //            break;
-            //    }
-
-            //    trainingSamples.Add(new TrainingSample(inputs, targets));
-            //}
-
-
             StreamReader sr = new StreamReader(File.OpenRead("mnist_train.csv"));
             String line = sr.ReadLine(); //skips first line
             int setupIdx = 0;
@@ -104,43 +69,9 @@ namespace MNIST_Supervised_Learning
                 Console.WriteLine("Epoch: {0}         MSE: {1}", epoch + 1, mse / numBatches);
             }
 
-            #region RESULTS
             //results
             testNetwork(mainNN, "mnist_train.csv");
             testNetwork(mainNN, "mnist_test.csv");
-
-            //IRIS
-            //int successes = 0;
-
-            //for (int sampleIdx = 0; sampleIdx < trainingSamples.Count; sampleIdx++)
-            //{
-            //    double[] output = mainNN.forwardPropagate(trainingSamples[sampleIdx].inputs);
-
-            //    int indexOfMaxValue = 0;
-            //    for (int idx = 0; idx < output.Length; idx++)
-            //    {
-            //        if (output[idx] > output[indexOfMaxValue])
-            //        {
-            //            indexOfMaxValue = idx;
-            //        }
-            //    }
-
-            //    double[] targets = trainingSamples[sampleIdx].targets;
-
-            //    String[] names = { "Iris-setosa", "Iris-versicolor", "Iris-virginica" };
-            //    if (targets[indexOfMaxValue] == 1)
-            //    {
-            //        Console.WriteLine("Match: " + names[indexOfMaxValue]);
-            //        successes++;
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine("Error: Predicted = " + names[indexOfMaxValue] + ", Actual = ");
-            //    }
-            //}
-
-            //Console.WriteLine(successes + "/" + trainingSamples.Count);
-            #endregion
 
             Application.Run(new Form1(mainNN));
         }
@@ -247,10 +178,6 @@ namespace MNIST_Supervised_Learning
             tasks.ForEach(task => task.Start());
             Task.WaitAll(tasks.ToArray());
 
-            //for (int sampleIdx = 0; sampleIdx < Network.batchSize; sampleIdx++)
-            //{
-            //    batchMse += trainSample(batchIdx, sampleIdx, mainNN, trainingSamples);
-            //}
             return batchMse;
         }
     }
